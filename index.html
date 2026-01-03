@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aethel - Consultorio de la Mente</title>
+    <title>El Consejo Etéreo</title>
     <!-- Import Elegant Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,14 +13,20 @@
       :root {
         --bg-void: #020204;
         --bg-secondary: #0a0a0f;
-        --accent-gold: #c5a059;
-        --accent-gold-dim: rgba(197, 160, 89, 0.1);
+        
+        /* Role Colors */
+        --color-strategist: #ef4444; /* Red - Mars */
+        --color-analyst: #8b5cf6; /* Violet - Mystery */
+        --color-math: #0ea5e9; /* Blue - Logic */
+        --color-humanist: #f59e0b; /* Amber - Warmth */
+        --color-galen: #10b981; /* Emerald - Life */
+        --color-philosopher: #d4af37; /* Gold - Wisdom */
+        
         --text-primary: #e2e2e2;
         --text-secondary: #8a8a9a;
         --glass-border: rgba(255, 255, 255, 0.08);
         --glass-bg: rgba(10, 10, 16, 0.7);
-        --user-msg-bg: rgba(197, 160, 89, 0.15);
-        --ai-msg-bg: rgba(255, 255, 255, 0.03);
+        --user-msg-bg: rgba(255, 255, 255, 0.05);
       }
 
       body {
@@ -57,36 +63,59 @@
 
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
-        width: 4px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
         background: #333;
-        border-radius: 2px;
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: var(--accent-gold);
+        background: var(--color-philosopher);
       }
 
+      /* Markdown Styling Improvement */
       .markdown-content {
         font-size: 1.2rem;
-        line-height: 1.8;
+        line-height: 1.7;
         letter-spacing: 0.01em;
       }
       
       .markdown-content p {
         margin-bottom: 1rem;
       }
-      
-      /* Animations */
-      @keyframes mist {
-        0% { opacity: 0.3; transform: translateY(0) scale(1); }
-        50% { opacity: 0.5; transform: translateY(-10px) scale(1.05); }
-        100% { opacity: 0.3; transform: translateY(0) scale(1); }
+
+      .markdown-content strong {
+        color: #fff;
+        font-weight: 600;
       }
 
+      .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+        font-family: 'Cinzel', serif;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: rgba(255,255,255,0.9);
+      }
+
+      .markdown-content ul, .markdown-content ol {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .markdown-content li {
+        margin-bottom: 0.5rem;
+      }
+
+      .markdown-content blockquote {
+        border-left: 3px solid rgba(255,255,255,0.2);
+        margin: 1rem 0;
+        padding-left: 1rem;
+        font-style: italic;
+        color: var(--text-secondary);
+      }
+      
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); filter: blur(5px); }
         to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -104,16 +133,12 @@
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
       }
 
-      .mystic-glow {
-        box-shadow: 0 0 20px rgba(197, 160, 89, 0.05);
-      }
-
       .source-chip {
         font-family: 'Inter', sans-serif;
         font-size: 0.7rem;
         letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: var(--accent-gold);
+        color: var(--color-philosopher);
         background: rgba(0, 0, 0, 0.4);
         padding: 4px 10px;
         border: 1px solid rgba(197, 160, 89, 0.2);
@@ -123,7 +148,7 @@
       }
       
       .source-chip:hover {
-        background: var(--accent-gold);
+        background: var(--color-philosopher);
         color: #000;
       }
 

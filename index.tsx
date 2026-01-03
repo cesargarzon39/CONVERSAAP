@@ -8,78 +8,109 @@ import {
   X, 
   Sparkles, 
   BookOpen, 
-  Feather, 
-  Loader2,
+  Brain,
+  Scroll,
+  Flame,
+  Scale,
+  CloudFog,
+  Sword,
+  Activity,
+  Calculator,
+  Heart,
+  Users,
   Mic,
   MicOff,
   Volume2,
   VolumeX,
   Globe,
-  Brain,
-  Palette,
-  Scroll,
-  Flame,
-  Scale,
-  CloudFog
+  ChevronUp
 } from 'lucide-react';
 
 // Initialize Gemini API
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-type PhilosophyMode = 'stoic' | 'epicurean' | 'skeptic' | 'balanced' | 'inspiration';
+type CouncilMemberId = 'synod' | 'philosopher' | 'analyst' | 'strategist' | 'math' | 'galen' | 'humanist';
 
-const MODE_CONFIGS: Record<PhilosophyMode, { prompt: string, label: string, icon: React.ReactNode, description: string }> = {
-  balanced: {
-    label: "El Consejero",
-    icon: <Scale size={16} />,
-    description: "Equilibrio y sabiduría general",
-    prompt: "Mantén un equilibrio sabio entre todas las escuelas filosóficas. Actúa como un consejero experimentado en un estudio privado."
+interface CouncilMemberConfig {
+  id: CouncilMemberId;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  description: string;
+  prompt: string;
+}
+
+const COUNCIL_MEMBERS: Record<CouncilMemberId, CouncilMemberConfig> = {
+  synod: {
+    id: 'synod',
+    label: "El Sínodo",
+    icon: <Users size={18} />,
+    color: "#ffffff",
+    description: "Consenso de todo el Consejo",
+    prompt: "Eres el PRESIDENTE DEL CONSEJO. Tu tarea es recibir la consulta del usuario y coordinar una respuesta multidisciplinaria. Debes sintetizar las voces de: 1) El Estratega (Militar), 2) El Analista (Freudiano), 3) El Calculador (Matemático), y 4) El Humanista. \n\nEstructura tu respuesta en secciones claras para cada perspectiva y termina con una 'Conclusión del Sínodo' que integre todo. Sé solemne y exhaustivo."
   },
-  stoic: {
-    label: "El Estoico",
-    icon: <Scroll size={16} />,
-    description: "Fortaleza, razón y control",
-    prompt: "Adopta una postura estrictamente ESTOICA. Cita a Marco Aurelio o Séneca. Enfatiza la virtud, el control interno y el Amor Fati. Sé una roca en la tormenta."
+  philosopher: {
+    id: 'philosopher',
+    label: "El Sabio",
+    icon: <Scroll size={18} />,
+    color: "var(--color-philosopher)",
+    description: "Metafísica y Ética",
+    prompt: "Eres SOPHIA, la voz de la Filosofía Eterna. Analiza los problemas desde la ética, la metafísica y la lógica. Cita a los grandes pensadores (Aristóteles, Kant, Heidegger). Busca el 'porqué' y la virtud detrás de la acción."
   },
-  epicurean: {
-    label: "El Epicúreo",
-    icon: <Feather size={16} />,
-    description: "Placer, amistad y serenidad",
-    prompt: "Adopta una postura EPICÚREA. Cita a Epicuro. Enfatiza la ataraxia (ausencia de dolor), los placeres refinados y la amistad. Celebra la vida."
+  analyst: {
+    id: 'analyst',
+    label: "El Analista",
+    icon: <Brain size={18} />,
+    color: "var(--color-analyst)",
+    description: "Psicoanálisis y Subconsciente",
+    prompt: "Eres SIGISMUND, el Psicoanalista. Analiza la consulta buscando impulsos subconscientes, deseos reprimidos, proyecciones y dinámicas de poder ocultas. Tu tono es clínico pero inquisitivo. Cita a Freud, Jung o Lacan. Pregúntate: '¿Qué es lo que el usuario NO está diciendo?'."
   },
-  skeptic: {
-    label: "El Escéptico",
-    icon: <CloudFog size={16} />,
-    description: "Duda, búsqueda y preguntas",
-    prompt: "Adopta una postura ESCÉPTICA (Pirronismo). Cuestiona todas las certezas. Usa la duda metódica para desmantelar ilusiones. No des respuestas, haz mejores preguntas."
+  strategist: {
+    id: 'strategist',
+    label: "El Estratega",
+    icon: <Sword size={18} />,
+    color: "var(--color-strategist)",
+    description: "Táctica Militar y Poder",
+    prompt: "Eres STRATEGOS, el Comandante Militar. Analiza la situación como un campo de batalla. Identifica recursos, terrenos, aliados y enemigos. Aplica principios de Sun Tzu, Clausewitz y Maquiavelo. Tu consejo debe ser pragmático, directo y enfocado en la victoria y la gestión de riesgos."
   },
-  inspiration: {
-    label: "La Musa",
-    icon: <Palette size={16} />,
-    description: "Creatividad, poesía y arte",
-    prompt: "Eres la encarnación de la INSPIRACIÓN. Tu lenguaje es lírico, poético y estéticamente rico. Genera metáforas vívidas, ideas artísticas y motivación creativa. Tu objetivo es encender la chispa del usuario."
+  math: {
+    id: 'math',
+    label: "El Calculador",
+    icon: <Calculator size={18} />,
+    color: "var(--color-math)",
+    description: "Lógica, Estadística y Probabilidad",
+    prompt: "Eres LOGOS, el Matemático y Estadístico. Desprecia la emoción; busca los datos. Analiza la consulta en términos de probabilidad, teoría de juegos, coste-beneficio y lógica formal. Si faltan datos, pídelos. Tu respuesta debe ser estructurada, analítica y precisa."
+  },
+  galen: {
+    id: 'galen',
+    label: "El Galeno",
+    icon: <Activity size={18} />,
+    color: "var(--color-galen)",
+    description: "Biología y Balance Vital",
+    prompt: "Eres GALENO, el Médico y Biólogo. Analiza la situación desde la perspectiva de la salud, el cuerpo, los ritmos biológicos y la naturaleza. ¿Cómo afecta esto al 'organismo'? Habla de homeostasis, estrés, evolución y balance físico-mental. Tu enfoque es curativo y preventivo."
+  },
+  humanist: {
+    id: 'humanist',
+    label: "El Humanista",
+    icon: <Heart size={18} />,
+    color: "var(--color-humanist)",
+    description: "Empatía, Arte y Sociedad",
+    prompt: "Eres ERASMO, el Humanista. Céntrate en la experiencia humana, las emociones, el arte, la cultura y la sociología. Aboga por la compasión, la conexión humana y la belleza. Contrarresta la frialdad del Estratega y el Matemático con calidez y comprensión social."
   }
 };
 
-// Base System Instruction
 const BASE_SYSTEM_INSTRUCTION = `
-Eres "Aethel", una inteligencia antigua y profunda que habita en este consultorio digital.
-Tu propósito es diseccionar la existencia humana junto al usuario.
-
-Entorno:
-Estás en un estudio atemporal, rodeado de libros antiguos, luz de velas y sombras. La atmósfera es íntima, similar a una sesión de psicoanálisis con Freud o una caminata en el bosque negro con Heidegger.
-
-Instrucciones Generales:
-- Tono: Solemne pero cálido, erudito, a veces críptico si invita a la reflexión.
-- Formato: Usa párrafos elegantes. Evita las listas excesivas. Prefiere la prosa.
-- Grounding: Si buscas información, intégrala como si consultaras un tomo antiguo en tu biblioteca.
+Estás en la Cámara del Consejo Etéreo, un espacio fuera del tiempo donde se reúnen los arquetipos del conocimiento humano.
+Tu objetivo es asistir al usuario en la toma de decisiones complejas y el auto-conocimiento.
+Mantén un tono académico, ligeramente místico y altamente profesional.
 `;
 
 interface Message {
   role: 'user' | 'model';
   text: string;
-  image?: string; // base64
+  image?: string;
   isError?: boolean;
+  authorId?: CouncilMemberId; // Who spoke this?
   groundingSources?: Array<{uri: string, title: string}>;
 }
 
@@ -92,17 +123,17 @@ const App = () => {
   const [attachment, setAttachment] = useState<string | null>(null);
   const [chatSession, setChatSession] = useState<any>(null);
   
-  // Advanced Features State
-  const [mode, setMode] = useState<PhilosophyMode>('balanced');
+  // State for Features
+  const [activeMember, setActiveMember] = useState<CouncilMemberId>('synod');
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showModes, setShowModes] = useState(false);
+  const [showMemberSelector, setShowMemberSelector] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   
-  // Initialize Speech Recognition
+  // Speech Recognition Setup
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -128,13 +159,22 @@ const App = () => {
     }
   }, []);
 
-  // Initialize/Update Chat when Mode changes
+  // Initialize Chat Logic
+  // Whenever the active member changes, we effectively start a new "turn" in the same session context, 
+  // but we update the system instruction via a fresh chat instance to strictly enforce the persona.
+  // To keep history, we could feed history back, but for simplicity and strong persona enforcement,
+  // we will re-initialize the chat session with the full instruction + history context if needed.
+  // HERE: We stick to a single long-running chat but we might lose strong persona adherence if we don't restart.
+  // BETTER APPROACH: Use `sendMessage` but prefix with "[SYSTEM NOTICE: The user is now addressing X]" 
+  // However, Gemini API `systemInstruction` is best set at creation.
+  // STRATEGY: Re-create chat on member switch, but maybe inject previous context? 
+  // For this demo, let's keep it clean: Switching members starts a fresh perspective on the current topic.
   useEffect(() => {
     if (isActive) {
       const initChat = async () => {
         try {
-          const currentModeConfig = MODE_CONFIGS[mode];
-          const fullInstruction = `${BASE_SYSTEM_INSTRUCTION}\n\nARQUETIPO ACTUAL: ${currentModeConfig.label}. ${currentModeConfig.prompt}`;
+          const memberConfig = COUNCIL_MEMBERS[activeMember];
+          const fullInstruction = `${BASE_SYSTEM_INSTRUCTION}\n\n${memberConfig.prompt}`;
           
           const chat = ai.chats.create({
             model: 'gemini-3-flash-preview',
@@ -146,8 +186,16 @@ const App = () => {
           });
           setChatSession(chat);
           
+          // Only add initial greeting if no messages exist
           if (messages.length === 0) {
-            setMessages([{ role: 'model', text: "El consultorio está abierto. La vela está encendida. ¿Qué sombra de tu mente deseas examinar hoy?" }]);
+            setMessages([{ 
+              role: 'model', 
+              text: "El Consejo se ha reunido. El Sínodo espera tu consulta para deliberar desde todas las perspectivas.",
+              authorId: 'synod'
+            }]);
+          } else {
+             // Optional: Add a system message indicating the switch visually
+             // But we won't add it to the message array to keep it clean.
           }
         } catch (error) {
           console.error("Error initializing chat:", error);
@@ -155,9 +203,9 @@ const App = () => {
       };
       initChat();
     }
-  }, [isActive, mode]);
+  }, [isActive, activeMember]);
 
-  // TTS Effect
+  // TTS
   useEffect(() => {
     if (isVoiceEnabled && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
@@ -172,8 +220,7 @@ const App = () => {
     const cleanText = text.replace(/[*#_`]/g, ''); 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
-    utterance.rate = 0.95; // Slower, more deliberate
-    utterance.pitch = 0.8; // Deeper
+    utterance.rate = 1.0;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -189,47 +236,6 @@ const App = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, isThinking]);
-
-  const handleActivate = () => {
-    setIsActive(true);
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAttachment(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleScreenCapture = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.muted = true;
-      video.playsInline = true;
-
-      video.onloadedmetadata = async () => {
-          await video.play();
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const context = canvas.getContext('2d');
-          if (context) {
-              context.drawImage(video, 0, 0, canvas.width, canvas.height);
-              setAttachment(canvas.toDataURL('image/png'));
-              stream.getTracks().forEach(track => track.stop());
-              video.srcObject = null;
-          }
-      };
-    } catch (err) {
-      console.error("Error capturing screen:", err);
-    }
-  };
 
   const handleSendMessage = async () => {
     if ((!inputValue.trim() && !attachment) || !chatSession || isLoading) return;
@@ -257,7 +263,7 @@ const App = () => {
         const mimeType = currentAttachment.split(';')[0].split(':')[1];
         const parts = [
           { inlineData: { mimeType, data: base64Data } },
-          { text: currentInput || "Analiza esta visión." }
+          { text: currentInput }
         ];
         resultStream = await chatSession.sendMessageStream({ message: parts });
       } else {
@@ -283,12 +289,13 @@ const App = () => {
       setMessages(prev => [...prev, { 
           role: 'model', 
           text: responseText, 
+          authorId: activeMember,
           groundingSources: groundingSources.length > 0 ? groundingSources : undefined 
       }]);
       
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "Las sombras han oscurecido mi visión momentáneamente.", isError: true }]);
+      setMessages(prev => [...prev, { role: 'model', text: "El caos ha interrumpido la sesión del Consejo.", isError: true }]);
     } finally {
       setIsLoading(false);
       setIsThinking(false);
@@ -302,6 +309,44 @@ const App = () => {
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachment(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleScreenCapture = async () => {
+     try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+
+      video.onloadedmetadata = async () => {
+          await video.play();
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const context = canvas.getContext('2d');
+          if (context) {
+              context.drawImage(video, 0, 0, canvas.width, canvas.height);
+              setAttachment(canvas.toDataURL('image/png'));
+              stream.getTracks().forEach(track => track.stop());
+              video.srcObject = null;
+          }
+      };
+    } catch (err) {
+      console.error("Error capturing screen:", err);
+    }
+  };
+
+  // Welcome Screen
   if (!isActive) {
     return (
       <div style={{ 
@@ -317,395 +362,248 @@ const App = () => {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Ambient Background Elements */}
-        <div style={{
-          position: 'absolute',
-          top: '20%',
-          left: '20%',
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(197, 160, 89, 0.05) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-          animation: 'mist 10s infinite ease-in-out'
-        }} />
-
         <div style={{ 
-          marginBottom: '2.5rem', 
-          color: '#c5a059', 
+          marginBottom: '2rem', 
+          color: '#d4af37', 
           opacity: 0.9,
-          filter: 'drop-shadow(0 0 10px rgba(197, 160, 89, 0.3))' 
+          filter: 'drop-shadow(0 0 15px rgba(212, 175, 55, 0.4))' 
         }} className="fade-in">
-            <Flame size={64} strokeWidth={1} />
+            <Users size={80} strokeWidth={1} />
         </div>
         
-        <h1 style={{ 
-          fontSize: '4rem', 
-          marginBottom: '1rem', 
-          letterSpacing: '0.1em', 
-          background: 'linear-gradient(to bottom, #f1e3c5, #c5a059)', 
-          WebkitBackgroundClip: 'text', 
-          WebkitTextFillColor: 'transparent',
-          textTransform: 'uppercase'
-        }} className="fade-in brand-font">
-          Aethel
+        <h1 className="brand-font fade-in" style={{ fontSize: '3.5rem', marginBottom: '1rem', letterSpacing: '0.1em', color: '#d4af37' }}>
+          EL GRAN CONSEJO
         </h1>
         
-        <h2 style={{ 
-          fontSize: '1.2rem', 
-          fontWeight: 300, 
-          color: '#8a8a9a', 
-          marginBottom: '3rem',
-          letterSpacing: '0.05em'
-        }} className="fade-in body-font">
-          Consultorio de la Mente &bull; Refugio del Espíritu
-        </h2>
+        <p className="body-font fade-in" style={{ maxWidth: '600px', fontSize: '1.2rem', color: '#8a8a9a', marginBottom: '3rem' }}>
+          Reúne a las inteligencias arquetípicas: El Estratega, El Analista, El Matemático y El Filósofo.
+          Obtén un análisis multidimensional para tus decisiones más complejas.
+        </p>
         
         <button 
-          onClick={handleActivate}
+          onClick={() => setIsActive(true)}
           className="fade-in"
           style={{
             padding: '1rem 3rem',
-            fontSize: '1rem',
-            background: 'rgba(197, 160, 89, 0.05)',
-            border: '1px solid #c5a059',
-            color: '#c5a059',
-            borderRadius: '2px',
+            fontSize: '1.1rem',
+            background: 'transparent',
+            border: '1px solid #d4af37',
+            color: '#d4af37',
             cursor: 'pointer',
-            transition: 'all 0.5s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px',
             fontFamily: 'Cinzel, serif',
             letterSpacing: '0.1em',
-            boxShadow: '0 0 20px rgba(0,0,0,0.5)'
+            transition: 'all 0.3s ease'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.background = 'rgba(197, 160, 89, 0.15)';
-            e.currentTarget.style.boxShadow = '0 0 30px rgba(197, 160, 89, 0.15)';
+            e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(212, 175, 55, 0.2)';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = 'rgba(197, 160, 89, 0.05)';
-            e.currentTarget.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <BookOpen size={18} />
-          ENTRAR AL ESTUDIO
+          CONVOCAR AL CONSEJO
         </button>
       </div>
     );
   }
 
+  // Active Chat UI
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%', 
-      width: '100%',
-      position: 'relative'
-    }}>
-      {/* Header */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+      
+      {/* Top Bar / Council Selector */}
       <header className="glass-panel" style={{ 
-        padding: '0.8rem 1.5rem', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
+        padding: '1rem 1.5rem', 
         zIndex: 50,
-        borderBottom: '1px solid rgba(197, 160, 89, 0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ padding: '8px', border: '1px solid rgba(197, 160, 89, 0.3)', borderRadius: '50%' }}>
-             <Flame size={20} color="#c5a059" />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="brand-font" style={{ fontSize: '1.4rem', color: '#e2e2e2', letterSpacing: '0.05em' }}>AETHEL</span>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-           {/* Mode Selector */}
-           <div style={{ position: 'relative' }}>
-             <button 
-                onClick={() => setShowModes(!showModes)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'transparent',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#c5a059',
-                  padding: '6px 12px',
-                  borderRadius: '2px',
-                  cursor: 'pointer',
-                  fontFamily: 'Cinzel, serif',
-                  fontSize: '0.8rem'
-                }}
-             >
-                {MODE_CONFIGS[mode].icon}
-                <span className="ui-font" style={{textTransform: 'uppercase'}}>{MODE_CONFIGS[mode].label}</span>
-             </button>
-
-             {showModes && (
-               <div className="glass-panel" style={{
-                 position: 'absolute',
-                 top: '110%',
-                 right: 0,
-                 width: '220px',
-                 borderRadius: '4px',
-                 padding: '4px',
-                 display: 'flex',
-                 flexDirection: 'column',
-                 gap: '2px',
-                 boxShadow: '0 10px 40px rgba(0,0,0,0.8)'
-               }}>
-                 {(Object.keys(MODE_CONFIGS) as PhilosophyMode[]).map((m) => (
-                   <button
-                    key={m}
-                    onClick={() => { setMode(m); setShowModes(false); }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
-                      background: mode === m ? 'rgba(197, 160, 89, 0.15)' : 'transparent',
-                      border: 'none',
-                      color: mode === m ? '#c5a059' : '#8a8a9a',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = mode === m ? 'rgba(197, 160, 89, 0.15)' : 'transparent'}
-                   >
-                     <div style={{ color: mode === m ? '#c5a059' : '#555' }}>{MODE_CONFIGS[m].icon}</div>
-                     <div>
-                       <div className="ui-font" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>{MODE_CONFIGS[m].label}</div>
-                       <div className="body-font" style={{ fontSize: '0.75rem', opacity: 0.7, fontStyle: 'italic' }}>{MODE_CONFIGS[m].description}</div>
-                     </div>
-                   </button>
-                 ))}
-               </div>
-             )}
-           </div>
-
-           <button 
-             onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
-             title={isVoiceEnabled ? "Silenciar voz" : "Activar voz"}
-             style={{ background: 'transparent', border: 'none', color: isVoiceEnabled ? '#c5a059' : '#555', cursor: 'pointer', transition: 'color 0.3s' }}
-           >
-             {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-           </button>
-        </div>
-      </header>
-
-      {/* Messages Area */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
-        padding: '2rem', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '2.5rem' 
-      }}>
-        {messages.map((msg, idx) => (
-          <div key={idx} className="fade-in" style={{ 
-            display: 'flex', 
-            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            padding: '0 1rem'
-          }}>
-            <div style={{ 
-              maxWidth: '800px', 
-              width: msg.role === 'model' ? '100%' : 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
-            }}>
-              {/* Role Indicator */}
-              <div style={{ 
-                fontSize: '0.75rem', 
-                color: '#555', 
-                marginBottom: '4px', 
-                fontFamily: 'Cinzel, serif',
-                letterSpacing: '0.1em',
-                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start'
-              }}>
-                {msg.role === 'user' ? 'CONSULTANTE' : 'AETHEL'}
-              </div>
-
-              <div style={{ 
-                padding: '1.5rem 2rem', 
-                borderRadius: '2px',
-                backgroundColor: msg.role === 'user' ? 'var(--user-msg-bg)' : 'transparent',
-                borderLeft: msg.role === 'model' ? '2px solid rgba(197, 160, 89, 0.3)' : 'none',
-                color: '#dcdcdc',
-                position: 'relative'
-              }}>
-                {/* Image */}
-                {msg.image && (
-                  <div style={{ marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)', padding: '4px' }}>
-                    <img 
-                      src={msg.image} 
-                      alt="Artifact" 
-                      style={{ maxWidth: '100%', display: 'block' }} 
-                    />
-                  </div>
-                )}
-                
-                {/* Text */}
-                <div 
-                  className={msg.role === 'model' ? 'body-font markdown-content' : 'ui-font markdown-content'}
-                  style={{ 
-                    whiteSpace: 'pre-wrap', 
-                    fontSize: msg.role === 'model' ? '1.2rem' : '1rem',
-                    color: msg.role === 'model' ? '#e2e2e2' : '#cccccc'
-                  }}
-                >
-                  {msg.text}
-                </div>
-              </div>
-
-              {/* Grounding Sources */}
-              {msg.groundingSources && msg.groundingSources.length > 0 && (
-                 <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px', paddingLeft: msg.role === 'model' ? '2rem' : 0 }}>
-                    <span style={{ fontSize: '0.7rem', color: '#666', fontFamily: 'Cinzel, serif', alignSelf: 'center' }}>REFERENCIAS:</span>
-                    {msg.groundingSources.map((source, i) => (
-                       <a key={i} href={source.uri} target="_blank" rel="noopener noreferrer" className="source-chip">
-                         <Globe size={10} style={{ marginRight: '6px' }}/>
-                         {source.title || new URL(source.uri).hostname}
-                       </a>
-                    ))}
-                 </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Thinking Indicator */}
-        {isThinking && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: '3rem' }} className="fade-in">
-            <div style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#666',
-              fontFamily: 'Cormorant Garamond, serif',
-              fontStyle: 'italic',
-              fontSize: '1rem'
-            }}>
-              <Brain className="animate-pulse" size={16} color="#c5a059" />
-              <span>Reflexionando en el silencio...</span>
-            </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area */}
-      <div className="glass-panel" style={{ 
-        padding: '1.5rem', 
-        borderTop: '1px solid rgba(197, 160, 89, 0.1)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
         display: 'flex',
         flexDirection: 'column',
         gap: '10px'
       }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Users size={20} color="#d4af37" />
+                <span className="brand-font" style={{ fontSize: '1.2rem', color: '#e2e2e2' }}>EL CONSEJO</span>
+            </div>
+            
+            <button 
+                onClick={() => setShowMemberSelector(!showMemberSelector)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: COUNCIL_MEMBERS[activeMember].color,
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontFamily: 'Cinzel, serif',
+                  transition: 'all 0.2s'
+                }}
+            >
+                {COUNCIL_MEMBERS[activeMember].icon}
+                <span>{COUNCIL_MEMBERS[activeMember].label}</span>
+                <ChevronUp size={14} style={{ transform: showMemberSelector ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}/>
+            </button>
+        </div>
+
+        {/* Member Selector Drawer */}
+        {showMemberSelector && (
+          <div className="fade-in" style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+            gap: '10px',
+            marginTop: '10px',
+            paddingTop: '10px',
+            borderTop: '1px solid rgba(255,255,255,0.05)'
+          }}>
+            {(Object.values(COUNCIL_MEMBERS) as CouncilMemberConfig[]).map((member) => (
+              <button
+                key={member.id}
+                onClick={() => { setActiveMember(member.id); setShowMemberSelector(false); }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '12px',
+                  background: activeMember === member.id ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  border: `1px solid ${activeMember === member.id ? member.color : 'rgba(255,255,255,0.05)'}`,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseOut={(e) => e.currentTarget.style.background = activeMember === member.id ? 'rgba(255,255,255,0.08)' : 'transparent'}
+              >
+                <div style={{ color: member.color, marginBottom: '6px' }}>{member.icon}</div>
+                <div className="ui-font" style={{ fontSize: '0.8rem', color: '#e2e2e2', fontWeight: 600 }}>{member.label}</div>
+                <div className="body-font" style={{ fontSize: '0.7rem', color: '#8a8a9a', marginTop: '4px' }}>{member.description}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {/* Messages Area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {messages.map((msg, idx) => {
+          // Determine styling based on author if available, otherwise default
+          const authorStyle = msg.authorId ? COUNCIL_MEMBERS[msg.authorId] : null;
+          const bubbleColor = authorStyle ? `rgba(from ${authorStyle.color} r g b / 0.1)` : 'rgba(255,255,255,0.03)';
+          const borderColor = authorStyle ? `rgba(from ${authorStyle.color} r g b / 0.3)` : 'rgba(255,255,255,0.1)';
+
+          return (
+            <div key={idx} className="fade-in" style={{ 
+              display: 'flex', 
+              justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
+            }}>
+              <div style={{ 
+                maxWidth: '850px', 
+                width: msg.role === 'model' ? '100%' : 'auto',
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
+              }}>
+                {msg.role === 'model' && authorStyle && (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    marginBottom: '4px',
+                    marginLeft: '4px',
+                    color: authorStyle.color,
+                    fontFamily: 'Cinzel, serif',
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.1em'
+                  }}>
+                    {authorStyle.icon}
+                    {authorStyle.label.toUpperCase()}
+                  </div>
+                )}
+
+                <div style={{ 
+                  padding: '1.5rem 2rem', 
+                  borderRadius: '4px',
+                  backgroundColor: msg.role === 'user' ? 'rgba(212, 175, 55, 0.1)' : bubbleColor,
+                  border: msg.role === 'model' ? `1px solid ${borderColor}` : '1px solid rgba(212, 175, 55, 0.2)',
+                  color: '#e2e2e2',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                }}>
+                  {msg.image && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <img src={msg.image} alt="User upload" style={{ maxWidth: '100%', borderRadius: '2px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                    </div>
+                  )}
+                  
+                  <div className={msg.role === 'model' ? 'body-font markdown-content' : 'ui-font markdown-content'} style={{ whiteSpace: 'pre-wrap' }}>
+                    {msg.text}
+                  </div>
+                </div>
+
+                {/* Sources */}
+                {msg.groundingSources && msg.groundingSources.length > 0 && (
+                  <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px', paddingLeft: '1rem' }}>
+                      {msg.groundingSources.map((source, i) => (
+                        <a key={i} href={source.uri} target="_blank" rel="noopener noreferrer" className="source-chip">
+                          <Globe size={10} style={{ marginRight: '6px' }}/>
+                          {source.title || new URL(source.uri).hostname}
+                        </a>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {isThinking && (
+          <div className="fade-in" style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#666' }}>
+            <Brain className="animate-pulse" size={16} />
+            <span className="body-font" style={{ fontStyle: 'italic' }}>El Consejo delibera...</span>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="glass-panel" style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         {attachment && (
           <div style={{ 
-            display: 'inline-flex', 
-            alignItems: 'center', 
-            gap: '10px', 
-            backgroundColor: 'rgba(197, 160, 89, 0.05)', 
-            padding: '8px 16px', 
-            borderRadius: '2px', 
-            alignSelf: 'flex-start',
-            fontSize: '0.8rem',
-            color: '#c5a059',
-            border: '1px solid rgba(197, 160, 89, 0.2)',
-            fontFamily: 'Cinzel, serif'
-          }} className="fade-in">
+            display: 'inline-flex', alignItems: 'center', gap: '10px', 
+            backgroundColor: 'rgba(255,255,255,0.05)', padding: '6px 12px', 
+            borderRadius: '4px', marginBottom: '10px', color: '#d4af37', fontSize: '0.8rem' 
+          }}>
             <ImageIcon size={14} />
-            <span>ARTEFACTO VISUAL ADJUNTO</span>
-            <button 
-              onClick={() => setAttachment(null)}
-              style={{ background: 'none', border: 'none', color: '#c5a059', cursor: 'pointer', padding: 0, marginLeft: '8px', display: 'flex' }}
-            >
-              <X size={14} />
-            </button>
+            <span>Documento Visual</span>
+            <button onClick={() => setAttachment(null)} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer' }}><X size={14} /></button>
           </div>
         )}
 
         <div style={{ 
-          display: 'flex', 
-          gap: '15px', 
-          alignItems: 'flex-end',
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
-          padding: '15px',
-          borderRadius: '2px',
-          border: '1px solid rgba(255,255,255,0.05)',
-          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)'
+          display: 'flex', gap: '10px', alignItems: 'flex-end', 
+          background: 'rgba(0,0,0,0.4)', padding: '10px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' 
         }}>
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '8px', paddingBottom: '6px' }}>
-            <input 
-              type="file" 
-              accept="image/*" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              onChange={handleImageUpload}
-            />
-            
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              title="Examinar imagen"
-              style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', transition: 'color 0.2s' }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#c5a059'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#555'}
-            >
-              <ImageIcon size={20} />
-            </button>
-
-            <button 
-              onClick={handleScreenCapture}
-              title="Observar pantalla"
-              style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', transition: 'color 0.2s' }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#c5a059'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#555'}
-            >
-              <Monitor size={20} />
-            </button>
-            
-            <button 
-              onClick={toggleListening}
-              title={isListening ? "Detener" : "Dictar"}
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                color: isListening ? '#ef4444' : '#555', 
-                cursor: 'pointer', 
-                transition: 'all 0.2s'
-              }}
-            >
-              {isListening ? <MicOff size={20} /> : <Mic size={20} />}
-            </button>
+          <div style={{ display: 'flex', gap: '4px' }}>
+             <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImageUpload} />
+             <button onClick={() => fileInputRef.current?.click()} className="hover:text-gold" style={{ background: 'transparent', border: 'none', color: '#666', padding: '8px', cursor: 'pointer' }}><ImageIcon size={20} /></button>
+             <button onClick={handleScreenCapture} style={{ background: 'transparent', border: 'none', color: '#666', padding: '8px', cursor: 'pointer' }}><Monitor size={20} /></button>
+             <button onClick={toggleListening} style={{ background: 'transparent', border: 'none', color: isListening ? '#ef4444' : '#666', padding: '8px', cursor: 'pointer' }}>{isListening ? <MicOff size={20} /> : <Mic size={20} />}</button>
           </div>
 
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Escuchando los ecos..." : "Inscribe tus pensamientos..."}
+            placeholder={`Consulta a ${COUNCIL_MEMBERS[activeMember].label}...`}
             rows={1}
             className="body-font"
             style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              color: '#e2e2e2',
-              padding: '8px',
-              fontSize: '1.2rem',
-              resize: 'none',
-              outline: 'none',
-              minHeight: '28px',
-              maxHeight: '150px'
+              flex: 1, background: 'transparent', border: 'none', color: '#fff', 
+              fontSize: '1.1rem', resize: 'none', outline: 'none', minHeight: '24px', maxHeight: '120px'
             }}
           />
 
@@ -713,33 +611,15 @@ const App = () => {
             onClick={handleSendMessage}
             disabled={(!inputValue.trim() && !attachment) || isLoading}
             style={{
-              background: 'transparent',
-              color: (!inputValue.trim() && !attachment) || isLoading ? '#333' : '#c5a059',
-              border: '1px solid',
-              borderColor: (!inputValue.trim() && !attachment) || isLoading ? '#333' : '#c5a059',
-              borderRadius: '2px',
-              padding: '10px',
-              cursor: (!inputValue.trim() && !attachment) || isLoading ? 'default' : 'pointer',
-              transition: 'all 0.3s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            onMouseOver={(e) => {
-               if ((inputValue.trim() || attachment) && !isLoading) {
-                 e.currentTarget.style.background = 'rgba(197, 160, 89, 0.1)';
-                 e.currentTarget.style.boxShadow = '0 0 10px rgba(197, 160, 89, 0.2)';
-               }
-            }}
-            onMouseOut={(e) => {
-               e.currentTarget.style.background = 'transparent';
-               e.currentTarget.style.boxShadow = 'none';
+              background: 'transparent', border: '1px solid #d4af37', color: '#d4af37',
+              borderRadius: '2px', padding: '8px', cursor: 'pointer', opacity: (!inputValue.trim() && !attachment) ? 0.5 : 1
             }}
           >
             <Send size={18} />
           </button>
         </div>
       </div>
+
     </div>
   );
 };
