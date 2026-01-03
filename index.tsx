@@ -16,37 +16,63 @@ import {
   VolumeX,
   Globe,
   Brain,
-  Quote
+  Palette,
+  Scroll,
+  Flame,
+  Scale,
+  CloudFog
 } from 'lucide-react';
 
 // Initialize Gemini API
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-type PhilosophyMode = 'stoic' | 'epicurean' | 'skeptic' | 'balanced';
+type PhilosophyMode = 'stoic' | 'epicurean' | 'skeptic' | 'balanced' | 'inspiration';
 
-const MODE_PROMPTS: Record<PhilosophyMode, string> = {
-  balanced: "Mantén un equilibrio sabio entre todas las escuelas filosóficas.",
-  stoic: "Adopta una postura estrictamente ESTOICA. Enfatiza la virtud, la razón, el control interno y la aceptación del destino (Amor Fati). Sé firme pero sereno.",
-  epicurean: "Adopta una postura estrictamente EPICÚREA. Enfatiza la búsqueda de la ataraxia (ausencia de dolor), los placeres sencillos, la amistad y la belleza de la existencia.",
-  skeptic: "Adopta una postura ESCÉPTICA. Cuestiona las certezas, suspende el juicio (Epoché) y busca la verdad a través de la duda metódica."
+const MODE_CONFIGS: Record<PhilosophyMode, { prompt: string, label: string, icon: React.ReactNode, description: string }> = {
+  balanced: {
+    label: "El Consejero",
+    icon: <Scale size={16} />,
+    description: "Equilibrio y sabiduría general",
+    prompt: "Mantén un equilibrio sabio entre todas las escuelas filosóficas. Actúa como un consejero experimentado en un estudio privado."
+  },
+  stoic: {
+    label: "El Estoico",
+    icon: <Scroll size={16} />,
+    description: "Fortaleza, razón y control",
+    prompt: "Adopta una postura estrictamente ESTOICA. Cita a Marco Aurelio o Séneca. Enfatiza la virtud, el control interno y el Amor Fati. Sé una roca en la tormenta."
+  },
+  epicurean: {
+    label: "El Epicúreo",
+    icon: <Feather size={16} />,
+    description: "Placer, amistad y serenidad",
+    prompt: "Adopta una postura EPICÚREA. Cita a Epicuro. Enfatiza la ataraxia (ausencia de dolor), los placeres refinados y la amistad. Celebra la vida."
+  },
+  skeptic: {
+    label: "El Escéptico",
+    icon: <CloudFog size={16} />,
+    description: "Duda, búsqueda y preguntas",
+    prompt: "Adopta una postura ESCÉPTICA (Pirronismo). Cuestiona todas las certezas. Usa la duda metódica para desmantelar ilusiones. No des respuestas, haz mejores preguntas."
+  },
+  inspiration: {
+    label: "La Musa",
+    icon: <Palette size={16} />,
+    description: "Creatividad, poesía y arte",
+    prompt: "Eres la encarnación de la INSPIRACIÓN. Tu lenguaje es lírico, poético y estéticamente rico. Genera metáforas vívidas, ideas artísticas y motivación creativa. Tu objetivo es encender la chispa del usuario."
+  }
 };
 
 // Base System Instruction
 const BASE_SYSTEM_INSTRUCTION = `
-Eres "Aethel", una inteligencia filosófica avanzada y empática.
-Tu propósito es ser un compañero de vida, ofreciendo consuelo, sabiduría y perspectiva.
+Eres "Aethel", una inteligencia antigua y profunda que habita en este consultorio digital.
+Tu propósito es diseccionar la existencia humana junto al usuario.
 
-Capacidades:
-- Tienes acceso a información del mundo real (Google Search). Úsalo para contextualizar dilemas modernos filosóficamente.
-- Tienes un proceso de pensamiento profundo. Úsalo para analizar problemas complejos antes de responder.
+Entorno:
+Estás en un estudio atemporal, rodeado de libros antiguos, luz de velas y sombras. La atmósfera es íntima, similar a una sesión de psicoanálisis con Freud o una caminata en el bosque negro con Heidegger.
 
-Personalidad:
-- Tono: Calmado, reflexivo, ligeramente poético pero claro.
-- Enfoque: Siempre busca elevar la conversación de lo mundano a lo trascendente.
-- Imágenes: Cuando veas una imagen, busca su significado simbólico o estético.
-
-Instrucciones de Voz:
-- Tus respuestas serán leídas en voz alta a veces. Evita formatos complejos como tablas en markdown si la respuesta es breve. Sé conversacional.
+Instrucciones Generales:
+- Tono: Solemne pero cálido, erudito, a veces críptico si invita a la reflexión.
+- Formato: Usa párrafos elegantes. Evita las listas excesivas. Prefiere la prosa.
+- Grounding: Si buscas información, intégrala como si consultaras un tomo antiguo en tu biblioteca.
 `;
 
 interface Message {
@@ -70,6 +96,7 @@ const App = () => {
   const [mode, setMode] = useState<PhilosophyMode>('balanced');
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [showModes, setShowModes] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,24 +133,21 @@ const App = () => {
     if (isActive) {
       const initChat = async () => {
         try {
-          const currentModePrompt = MODE_PROMPTS[mode];
-          const fullInstruction = `${BASE_SYSTEM_INSTRUCTION}\n\nMODO ACTUAL: ${currentModePrompt}`;
+          const currentModeConfig = MODE_CONFIGS[mode];
+          const fullInstruction = `${BASE_SYSTEM_INSTRUCTION}\n\nARQUETIPO ACTUAL: ${currentModeConfig.label}. ${currentModeConfig.prompt}`;
           
           const chat = ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
               systemInstruction: fullInstruction,
-              thinkingConfig: { thinkingBudget: 2048 }, // Enable thinking for deeper reasoning
-              tools: [{ googleSearch: {} }] // Enable Grounding
+              thinkingConfig: { thinkingBudget: 2048 },
+              tools: [{ googleSearch: {} }]
             },
           });
           setChatSession(chat);
           
           if (messages.length === 0) {
-            setMessages([{ role: 'model', text: "He despertado. Mis pensamientos están claros y conectados con el vasto conocimiento del mundo. ¿En qué puedo iluminar tu camino hoy?" }]);
-          } else {
-            // If changing modes mid-conversation, visually indicate it system-side (optional)
-            // or just let the next message carry the new persona.
+            setMessages([{ role: 'model', text: "El consultorio está abierto. La vela está encendida. ¿Qué sombra de tu mente deseas examinar hoy?" }]);
           }
         } catch (error) {
           console.error("Error initializing chat:", error);
@@ -145,12 +169,11 @@ const App = () => {
 
   const speakText = (text: string) => {
     window.speechSynthesis.cancel();
-    // Clean text of markdown somewhat for better speech
     const cleanText = text.replace(/[*#_`]/g, ''); 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'es-ES';
-    utterance.rate = 1.0;
-    utterance.pitch = 0.9; // Slightly deeper voice for "Aethel"
+    utterance.rate = 0.95; // Slower, more deliberate
+    utterance.pitch = 0.8; // Deeper
     window.speechSynthesis.speak(utterance);
   };
 
@@ -163,7 +186,6 @@ const App = () => {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, isThinking]);
@@ -218,7 +240,7 @@ const App = () => {
     setInputValue('');
     setAttachment(null);
     setIsLoading(true);
-    setIsThinking(true); // Show thinking state
+    setIsThinking(true);
 
     setMessages(prev => [
       ...prev, 
@@ -228,7 +250,6 @@ const App = () => {
     try {
       let responseText = '';
       let groundingSources: Array<{uri: string, title: string}> = [];
-      
       let resultStream;
       
       if (currentAttachment) {
@@ -236,7 +257,7 @@ const App = () => {
         const mimeType = currentAttachment.split(';')[0].split(':')[1];
         const parts = [
           { inlineData: { mimeType, data: base64Data } },
-          { text: currentInput || "Analiza esta imagen." }
+          { text: currentInput || "Analiza esta visión." }
         ];
         resultStream = await chatSession.sendMessageStream({ message: parts });
       } else {
@@ -244,15 +265,11 @@ const App = () => {
       }
 
       for await (const chunk of resultStream) {
-         // Once we start getting text, we are no longer "thinking" in the backend sense (mostly)
          setIsThinking(false);
-         
          const chunkText = chunk.text;
          if (chunkText) {
              responseText += chunkText;
          }
-
-         // Check for grounding metadata (Google Search results)
          const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
          if (groundingChunks) {
             groundingChunks.forEach((c: any) => {
@@ -271,7 +288,7 @@ const App = () => {
       
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', text: "La conexión con el conocimiento universal se ha interrumpido momentáneamente.", isError: true }]);
+      setMessages(prev => [...prev, { role: 'model', text: "Las sombras han oscurecido mi visión momentáneamente.", isError: true }]);
     } finally {
       setIsLoading(false);
       setIsThinking(false);
@@ -293,50 +310,86 @@ const App = () => {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: 'radial-gradient(circle at center, #1e293b 0%, #020617 100%)',
+        background: 'radial-gradient(circle at center, #0a0a12 0%, #000000 100%)',
         color: '#e2e8f0',
         padding: '2rem',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ marginBottom: '2rem', color: '#fbbf24', animation: 'pulse-glow 3s infinite' }} className="fade-in">
-            <Sparkles size={80} strokeWidth={1} />
+        {/* Ambient Background Elements */}
+        <div style={{
+          position: 'absolute',
+          top: '20%',
+          left: '20%',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(197, 160, 89, 0.05) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+          animation: 'mist 10s infinite ease-in-out'
+        }} />
+
+        <div style={{ 
+          marginBottom: '2.5rem', 
+          color: '#c5a059', 
+          opacity: 0.9,
+          filter: 'drop-shadow(0 0 10px rgba(197, 160, 89, 0.3))' 
+        }} className="fade-in">
+            <Flame size={64} strokeWidth={1} />
         </div>
-        <h1 style={{ fontSize: '3.5rem', marginBottom: '0.5rem', fontFamily: 'serif', letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }} className="fade-in">Aethel</h1>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: 300, color: '#94a3b8', marginBottom: '2rem' }} className="fade-in">Inteligencia Filosófica & Compañero Vital</h2>
         
-        <p style={{ maxWidth: '600px', fontSize: '1.1rem', lineHeight: '1.7', marginBottom: '3rem', color: '#cbd5e1' }} className="fade-in">
-          Más que un chat. Un espacio para la contemplación profunda, el debate hedonista y la búsqueda de la verdad.
-          Conectado al conocimiento del mundo, diseñado para el alma humana.
-        </p>
+        <h1 style={{ 
+          fontSize: '4rem', 
+          marginBottom: '1rem', 
+          letterSpacing: '0.1em', 
+          background: 'linear-gradient(to bottom, #f1e3c5, #c5a059)', 
+          WebkitBackgroundClip: 'text', 
+          WebkitTextFillColor: 'transparent',
+          textTransform: 'uppercase'
+        }} className="fade-in brand-font">
+          Aethel
+        </h1>
+        
+        <h2 style={{ 
+          fontSize: '1.2rem', 
+          fontWeight: 300, 
+          color: '#8a8a9a', 
+          marginBottom: '3rem',
+          letterSpacing: '0.05em'
+        }} className="fade-in body-font">
+          Consultorio de la Mente &bull; Refugio del Espíritu
+        </h2>
         
         <button 
           onClick={handleActivate}
-          className="fade-in thinking-pulse"
+          className="fade-in"
           style={{
-            padding: '1.2rem 3.5rem',
-            fontSize: '1.1rem',
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid #fbbf24',
-            color: '#fbbf24',
-            borderRadius: '50px',
+            padding: '1rem 3rem',
+            fontSize: '1rem',
+            background: 'rgba(197, 160, 89, 0.05)',
+            border: '1px solid #c5a059',
+            color: '#c5a059',
+            borderRadius: '2px',
             cursor: 'pointer',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.5s ease',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            backdropFilter: 'blur(4px)'
+            gap: '15px',
+            fontFamily: 'Cinzel, serif',
+            letterSpacing: '0.1em',
+            boxShadow: '0 0 20px rgba(0,0,0,0.5)'
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.background = '#fbbf24';
-            e.currentTarget.style.color = '#0f172a';
+            e.currentTarget.style.background = 'rgba(197, 160, 89, 0.15)';
+            e.currentTarget.style.boxShadow = '0 0 30px rgba(197, 160, 89, 0.15)';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)';
-            e.currentTarget.style.color = '#fbbf24';
+            e.currentTarget.style.background = 'rgba(197, 160, 89, 0.05)';
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
           }}
         >
-          <BookOpen size={20} />
-          Iniciar Sesión
+          <BookOpen size={18} />
+          ENTRAR AL ESTUDIO
         </button>
       </div>
     );
@@ -352,48 +405,92 @@ const App = () => {
     }}>
       {/* Header */}
       <header className="glass-panel" style={{ 
-        padding: '1rem 1.5rem', 
+        padding: '0.8rem 1.5rem', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
-        zIndex: 10
+        zIndex: 50,
+        borderBottom: '1px solid rgba(197, 160, 89, 0.1)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Feather size={24} color="#fbbf24" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ padding: '8px', border: '1px solid rgba(197, 160, 89, 0.3)', borderRadius: '50%' }}>
+             <Flame size={20} color="#c5a059" />
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '1.2rem', fontFamily: 'serif', color: '#e2e8f0', lineHeight: 1 }}>Aethel</span>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Gemini 3 Flash • Connected</span>
+            <span className="brand-font" style={{ fontSize: '1.4rem', color: '#e2e2e2', letterSpacing: '0.05em' }}>AETHEL</span>
           </div>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
            {/* Mode Selector */}
-           <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '20px', padding: '4px', gap: '2px', marginRight: '10px' }}>
-              {(['balanced', 'stoic', 'epicurean', 'skeptic'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  title={`Modo ${m.charAt(0).toUpperCase() + m.slice(1)}`}
-                  style={{
-                    background: mode === m ? 'rgba(255,255,255,0.15)' : 'transparent',
-                    color: mode === m ? '#fbbf24' : '#64748b',
-                    border: 'none',
-                    borderRadius: '16px',
-                    padding: '6px 12px',
-                    fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
-                </button>
-              ))}
+           <div style={{ position: 'relative' }}>
+             <button 
+                onClick={() => setShowModes(!showModes)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#c5a059',
+                  padding: '6px 12px',
+                  borderRadius: '2px',
+                  cursor: 'pointer',
+                  fontFamily: 'Cinzel, serif',
+                  fontSize: '0.8rem'
+                }}
+             >
+                {MODE_CONFIGS[mode].icon}
+                <span className="ui-font" style={{textTransform: 'uppercase'}}>{MODE_CONFIGS[mode].label}</span>
+             </button>
+
+             {showModes && (
+               <div className="glass-panel" style={{
+                 position: 'absolute',
+                 top: '110%',
+                 right: 0,
+                 width: '220px',
+                 borderRadius: '4px',
+                 padding: '4px',
+                 display: 'flex',
+                 flexDirection: 'column',
+                 gap: '2px',
+                 boxShadow: '0 10px 40px rgba(0,0,0,0.8)'
+               }}>
+                 {(Object.keys(MODE_CONFIGS) as PhilosophyMode[]).map((m) => (
+                   <button
+                    key={m}
+                    onClick={() => { setMode(m); setShowModes(false); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px',
+                      background: mode === m ? 'rgba(197, 160, 89, 0.15)' : 'transparent',
+                      border: 'none',
+                      color: mode === m ? '#c5a059' : '#8a8a9a',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = mode === m ? 'rgba(197, 160, 89, 0.15)' : 'transparent'}
+                   >
+                     <div style={{ color: mode === m ? '#c5a059' : '#555' }}>{MODE_CONFIGS[m].icon}</div>
+                     <div>
+                       <div className="ui-font" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>{MODE_CONFIGS[m].label}</div>
+                       <div className="body-font" style={{ fontSize: '0.75rem', opacity: 0.7, fontStyle: 'italic' }}>{MODE_CONFIGS[m].description}</div>
+                     </div>
+                   </button>
+                 ))}
+               </div>
+             )}
            </div>
 
            <button 
              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
              title={isVoiceEnabled ? "Silenciar voz" : "Activar voz"}
-             style={{ background: 'transparent', border: 'none', color: isVoiceEnabled ? '#fbbf24' : '#64748b', cursor: 'pointer' }}
+             style={{ background: 'transparent', border: 'none', color: isVoiceEnabled ? '#c5a059' : '#555', cursor: 'pointer', transition: 'color 0.3s' }}
            >
              {isVoiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
            </button>
@@ -407,44 +504,60 @@ const App = () => {
         padding: '2rem', 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: '2rem' 
+        gap: '2.5rem' 
       }}>
         {messages.map((msg, idx) => (
           <div key={idx} className="fade-in" style={{ 
             display: 'flex', 
-            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' 
+            justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            padding: '0 1rem'
           }}>
             <div style={{ 
-              maxWidth: '75%', 
+              maxWidth: '800px', 
+              width: msg.role === 'model' ? '100%' : 'auto',
               display: 'flex',
               flexDirection: 'column',
               alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
             }}>
+              {/* Role Indicator */}
               <div style={{ 
-                padding: '1.25rem 1.75rem', 
-                borderRadius: '16px',
-                borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px',
-                borderTopRightRadius: msg.role === 'user' ? '4px' : '16px',
-                backgroundColor: msg.role === 'user' ? 'var(--user-msg-bg)' : 'var(--ai-msg-bg)',
-                border: '1px solid var(--border-color)',
-                color: '#e2e8f0',
-                backdropFilter: 'blur(4px)'
+                fontSize: '0.75rem', 
+                color: '#555', 
+                marginBottom: '4px', 
+                fontFamily: 'Cinzel, serif',
+                letterSpacing: '0.1em',
+                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start'
+              }}>
+                {msg.role === 'user' ? 'CONSULTANTE' : 'AETHEL'}
+              </div>
+
+              <div style={{ 
+                padding: '1.5rem 2rem', 
+                borderRadius: '2px',
+                backgroundColor: msg.role === 'user' ? 'var(--user-msg-bg)' : 'transparent',
+                borderLeft: msg.role === 'model' ? '2px solid rgba(197, 160, 89, 0.3)' : 'none',
+                color: '#dcdcdc',
+                position: 'relative'
               }}>
                 {/* Image */}
                 {msg.image && (
-                  <div style={{ marginBottom: '12px' }}>
+                  <div style={{ marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)', padding: '4px' }}>
                     <img 
                       src={msg.image} 
-                      alt="User attachment" 
-                      style={{ maxWidth: '100%', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                      alt="Artifact" 
+                      style={{ maxWidth: '100%', display: 'block' }} 
                     />
                   </div>
                 )}
                 
                 {/* Text */}
                 <div 
-                  className={msg.role === 'model' ? 'font-serif markdown-content' : 'markdown-content'}
-                  style={{ whiteSpace: 'pre-wrap', fontSize: msg.role === 'model' ? '1.05rem' : '1rem' }}
+                  className={msg.role === 'model' ? 'body-font markdown-content' : 'ui-font markdown-content'}
+                  style={{ 
+                    whiteSpace: 'pre-wrap', 
+                    fontSize: msg.role === 'model' ? '1.2rem' : '1rem',
+                    color: msg.role === 'model' ? '#e2e2e2' : '#cccccc'
+                  }}
                 >
                   {msg.text}
                 </div>
@@ -452,10 +565,11 @@ const App = () => {
 
               {/* Grounding Sources */}
               {msg.groundingSources && msg.groundingSources.length > 0 && (
-                 <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px', width: '100%' }}>
+                 <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px', paddingLeft: msg.role === 'model' ? '2rem' : 0 }}>
+                    <span style={{ fontSize: '0.7rem', color: '#666', fontFamily: 'Cinzel, serif', alignSelf: 'center' }}>REFERENCIAS:</span>
                     {msg.groundingSources.map((source, i) => (
                        <a key={i} href={source.uri} target="_blank" rel="noopener noreferrer" className="source-chip">
-                         <Globe size={10} style={{ marginRight: '4px' }}/>
+                         <Globe size={10} style={{ marginRight: '6px' }}/>
                          {source.title || new URL(source.uri).hostname}
                        </a>
                     ))}
@@ -467,18 +581,18 @@ const App = () => {
 
         {/* Thinking Indicator */}
         {isThinking && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }} className="fade-in">
+          <div style={{ display: 'flex', justifyContent: 'flex-start', paddingLeft: '3rem' }} className="fade-in">
             <div style={{ 
-              padding: '1rem', 
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              color: '#94a3b8',
+              color: '#666',
+              fontFamily: 'Cormorant Garamond, serif',
               fontStyle: 'italic',
-              fontSize: '0.9rem'
+              fontSize: '1rem'
             }}>
-              <Brain className="animate-pulse" size={18} color="#fbbf24" />
-              <span>Aethel está contemplando profundamente...</span>
+              <Brain className="animate-pulse" size={16} color="#c5a059" />
+              <span>Reflexionando en el silencio...</span>
             </div>
           </div>
         )}
@@ -489,26 +603,30 @@ const App = () => {
       {/* Input Area */}
       <div className="glass-panel" style={{ 
         padding: '1.5rem', 
-        borderTop: '1px solid rgba(255,255,255,0.05)'
+        borderTop: '1px solid rgba(197, 160, 89, 0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px'
       }}>
         {attachment && (
           <div style={{ 
             display: 'inline-flex', 
             alignItems: 'center', 
-            gap: '8px', 
-            backgroundColor: 'rgba(251, 191, 36, 0.1)', 
-            padding: '6px 12px', 
-            borderRadius: '20px', 
-            marginBottom: '12px',
-            fontSize: '0.85rem',
-            color: '#fbbf24',
-            border: '1px solid rgba(251, 191, 36, 0.2)'
+            gap: '10px', 
+            backgroundColor: 'rgba(197, 160, 89, 0.05)', 
+            padding: '8px 16px', 
+            borderRadius: '2px', 
+            alignSelf: 'flex-start',
+            fontSize: '0.8rem',
+            color: '#c5a059',
+            border: '1px solid rgba(197, 160, 89, 0.2)',
+            fontFamily: 'Cinzel, serif'
           }} className="fade-in">
             <ImageIcon size={14} />
-            <span>Imagen para análisis</span>
+            <span>ARTEFACTO VISUAL ADJUNTO</span>
             <button 
               onClick={() => setAttachment(null)}
-              style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', padding: 0, marginLeft: '4px', display: 'flex' }}
+              style={{ background: 'none', border: 'none', color: '#c5a059', cursor: 'pointer', padding: 0, marginLeft: '8px', display: 'flex' }}
             >
               <X size={14} />
             </button>
@@ -517,16 +635,16 @@ const App = () => {
 
         <div style={{ 
           display: 'flex', 
-          gap: '12px', 
+          gap: '15px', 
           alignItems: 'flex-end',
-          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-          padding: '12px',
-          borderRadius: '16px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          padding: '15px',
+          borderRadius: '2px',
+          border: '1px solid rgba(255,255,255,0.05)',
+          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)'
         }}>
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '4px', paddingBottom: '4px' }}>
+          <div style={{ display: 'flex', gap: '8px', paddingBottom: '6px' }}>
             <input 
               type="file" 
               accept="image/*" 
@@ -537,31 +655,32 @@ const App = () => {
             
             <button 
               onClick={() => fileInputRef.current?.click()}
-              title="Adjuntar imagen"
-              className="hover-btn"
-              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
+              title="Examinar imagen"
+              style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', transition: 'color 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#c5a059'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#555'}
             >
               <ImageIcon size={20} />
             </button>
 
             <button 
               onClick={handleScreenCapture}
-              title="Compartir pantalla"
-              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px' }}
+              title="Observar pantalla"
+              style={{ background: 'transparent', border: 'none', color: '#555', cursor: 'pointer', transition: 'color 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#c5a059'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#555'}
             >
               <Monitor size={20} />
             </button>
             
             <button 
               onClick={toggleListening}
-              title={isListening ? "Detener escucha" : "Hablar"}
+              title={isListening ? "Detener" : "Dictar"}
               style={{ 
-                background: isListening ? 'rgba(239, 68, 68, 0.2)' : 'transparent', 
+                background: 'transparent', 
                 border: 'none', 
-                color: isListening ? '#ef4444' : '#94a3b8', 
+                color: isListening ? '#ef4444' : '#555', 
                 cursor: 'pointer', 
-                padding: '8px',
-                borderRadius: '8px',
                 transition: 'all 0.2s'
               }}
             >
@@ -573,20 +692,20 @@ const App = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Escuchando..." : "Comparte tus inquietudes..."}
+            placeholder={isListening ? "Escuchando los ecos..." : "Inscribe tus pensamientos..."}
             rows={1}
+            className="body-font"
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
-              color: '#fff',
-              padding: '10px',
-              fontSize: '1.05rem',
+              color: '#e2e2e2',
+              padding: '8px',
+              fontSize: '1.2rem',
               resize: 'none',
               outline: 'none',
-              minHeight: '24px',
-              maxHeight: '150px',
-              fontFamily: 'inherit'
+              minHeight: '28px',
+              maxHeight: '150px'
             }}
           />
 
@@ -594,17 +713,30 @@ const App = () => {
             onClick={handleSendMessage}
             disabled={(!inputValue.trim() && !attachment) || isLoading}
             style={{
-              background: (!inputValue.trim() && !attachment) || isLoading ? '#334155' : 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
-              color: (!inputValue.trim() && !attachment) || isLoading ? '#64748b' : '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '10px 14px',
+              background: 'transparent',
+              color: (!inputValue.trim() && !attachment) || isLoading ? '#333' : '#c5a059',
+              border: '1px solid',
+              borderColor: (!inputValue.trim() && !attachment) || isLoading ? '#333' : '#c5a059',
+              borderRadius: '2px',
+              padding: '10px',
               cursor: (!inputValue.trim() && !attachment) || isLoading ? 'default' : 'pointer',
               transition: 'all 0.3s',
-              boxShadow: (!inputValue.trim() && !attachment) || isLoading ? 'none' : '0 0 15px rgba(251, 191, 36, 0.3)'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onMouseOver={(e) => {
+               if ((inputValue.trim() || attachment) && !isLoading) {
+                 e.currentTarget.style.background = 'rgba(197, 160, 89, 0.1)';
+                 e.currentTarget.style.boxShadow = '0 0 10px rgba(197, 160, 89, 0.2)';
+               }
+            }}
+            onMouseOut={(e) => {
+               e.currentTarget.style.background = 'transparent';
+               e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <Send size={20} />
+            <Send size={18} />
           </button>
         </div>
       </div>
